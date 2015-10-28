@@ -8,14 +8,19 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
+import com.pusher.client.Pusher;
+import com.pusher.client.channel.SubscriptionEventListener;
 
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.Date;
 
 import cz.msebera.android.httpclient.Header;
@@ -26,6 +31,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     EditText messageInput;
     FloatingActionButton fab;
+    MessageAdapter messageAdapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -33,11 +39,44 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        //get input fiels by id
+        messageAdapter = new MessageAdapter(this, new ArrayList<app.com.lentusignavusdevelopment.angaras.Message>());
+        final ListView messagesView = (ListView) findViewById(R.id.messages_view);
+        messagesView.setAdapter(messageAdapter);
+
+        //get input fields by id
          messageInput = (EditText) findViewById(R.id.message_input);
 
         fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(this);
+
+        //initialize Pusher
+        Pusher pusher = new Pusher("913987a1757ec97a7259");
+
+        //subscribe to "messages channel
+        com.pusher.client.channel.Channel channel = pusher.subscribe("messages");
+
+        channel.bind("new_message", new SubscriptionEventListener() {
+            @Override
+            public void onEvent(String channelName, String eventName, final String data) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Gson gson = new Gson();
+                    Message message = gson.fromJson(data, Message.class);
+
+                    messageAdapter.add(message);
+
+                    //have the ListView scroll down to the new message
+                    messagesView.setSelection(messageAdapter.getCount() - 1);
+                }
+            });
+            }
+        });
+
+        //connect to Pusher API
+        pusher.connect();
+
+
 
 //                setOnClickListener(new View.OnClickListener() {
 //                    @Override
@@ -88,15 +127,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         //set our JSON object
         params.put("text", text);
-        params.put("name", "Angaras");
+        params.put("name", "tupac_shareem");
         params.put("time", new Date().getTime());
 
         //Create Async Client
         AsyncHttpClient client = new AsyncHttpClient();
 
-        client.post("http://10.0.0.61:3000", params, new JsonHttpResponseHandler(){
+        client.post("http://192.168.1.16:3000", params, new JsonHttpResponseHandler() {
             @Override
-            public void onSuccess(int statusCode, Header[] headers, JSONObject response){
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -120,5 +159,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
         }
+
+
     }
 
