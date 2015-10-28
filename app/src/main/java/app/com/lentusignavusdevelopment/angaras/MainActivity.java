@@ -8,6 +8,18 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Toast;
+
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
+
+import org.json.JSONObject;
+
+import java.util.Date;
+
+import cz.msebera.android.httpclient.Header;
+
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -64,6 +76,49 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void postMessage(){
+    String text = messageInput.getText().toString();
 
+        // return if blank
+        if (text.equals("")){
+            return;
+        }
+
+
+        RequestParams params = new RequestParams();
+
+        //set our JSON object
+        params.put("text", text);
+        params.put("name", "Kareem");
+        params.put("time", new Date().getTime());
+
+        //Create Async Client
+        AsyncHttpClient client = new AsyncHttpClient();
+
+        client.post("http://10.0.0.61:3000", params, new JsonHttpResponseHandler(){
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response){
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        messageInput.setText("");
+                        Toast.makeText(
+                                getApplicationContext(),
+                                "Something went right :)",
+                                Toast.LENGTH_LONG
+                        ).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                Toast.makeText(
+                        getApplicationContext(),
+                        "Something went wrong :(",
+                        Toast.LENGTH_LONG
+                ).show();
+            }
+        });
+        }
     }
-}
+
