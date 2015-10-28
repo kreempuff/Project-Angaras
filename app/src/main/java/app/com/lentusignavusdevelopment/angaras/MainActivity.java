@@ -88,7 +88,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         //set our JSON object
         params.put("text", text);
-        params.put("name", "Kareem");
+        params.put("name", "Angaras");
         params.put("time", new Date().getTime());
 
         //Create Async Client
