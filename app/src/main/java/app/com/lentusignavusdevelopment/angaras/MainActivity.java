@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -12,7 +13,6 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
-import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 import com.pusher.client.Pusher;
@@ -28,16 +28,25 @@ import cz.msebera.android.httpclient.Header;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-
+    String twitterName;
     EditText messageInput;
     FloatingActionButton fab;
     MessageAdapter messageAdapter;
+    Bundle extras;
+//    String server = "https://radiant-basin-1062.herokuapp.com/";
+    String server;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        extras = getIntent().getExtras();
+        if(extras != null){
+            twitterName = extras.getString("twitterName");
+        }
 
         messageAdapter = new MessageAdapter(this, new ArrayList<app.com.lentusignavusdevelopment.angaras.Message>());
         final ListView messagesView = (ListView) findViewById(R.id.messages_view);
@@ -50,7 +59,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         fab.setOnClickListener(this);
 
         //initialize Pusher
+
+
         Pusher pusher = new Pusher("913987a1757ec97a7259");
+
 
         //subscribe to "messages channel
         com.pusher.client.channel.Channel channel = pusher.subscribe("messages");
@@ -63,7 +75,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 public void run() {
                     Gson gson = new Gson();
                     Message message = gson.fromJson(data, Message.class);
-
+                    Log.e("Hey", "Message Below");
+                    Log.e("Some", String.valueOf(message));
                     messageAdapter.add(message);
 
                     //have the ListView scroll down to the new message
@@ -126,14 +139,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         RequestParams params = new RequestParams();
 
         //set our JSON object
-        params.put("text", text);
-        params.put("name", "tupac_shareem");
+        params.put("message", text);
+        params.put("name", twitterName);
         params.put("time", new Date().getTime());
 
         //Create Async Client
-        AsyncHttpClient client = new AsyncHttpClient();
+        com.loopj.android.http.AsyncHttpClient client;
+        client = new com.loopj.android.http.AsyncHttpClient();
 
-        client.post("http://192.168.1.16:3000", params, new JsonHttpResponseHandler() {
+        server = "http://localhost:3000";
+
+        Log.e("Server", server);
+        client.post("http://localhost:3000/", params, new JsonHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                 runOnUiThread(new Runnable() {
@@ -158,7 +175,42 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 ).show();
             }
         });
-        }
+
+        client.post("http://localhost:3000/hey", new JsonHttpResponseHandler(){
+
+
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, final JSONObject response) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.e("Hey Route", String.valueOf(response));
+                        messageInput.setText("");
+                        Toast.makeText(
+                                getApplicationContext(),
+                                "Something went right :)",
+                                Toast.LENGTH_LONG
+                        ).show();
+                    }
+                });
+            }
+
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                Toast.makeText(
+                        getApplicationContext(),
+                        "Something went wrong :(",
+                        Toast.LENGTH_LONG
+                ).show();
+            }
+
+
+        });
+        Log.e("End of method", "end");
+
+    }
+
 
 
     }
