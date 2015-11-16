@@ -13,6 +13,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
+import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 import com.pusher.client.Pusher;
@@ -29,6 +30,7 @@ import cz.msebera.android.httpclient.Header;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     String twitterName;
+    String channelName;
     EditText messageInput;
     FloatingActionButton fab;
     MessageAdapter messageAdapter;
@@ -46,6 +48,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         extras = getIntent().getExtras();
         if(extras != null){
             twitterName = extras.getString("twitterName");
+            channelName = extras.getString("channelName");
+
         }
 
         messageAdapter = new MessageAdapter(this, new ArrayList<app.com.lentusignavusdevelopment.angaras.Message>());
@@ -65,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         //subscribe to "messages channel
-        com.pusher.client.channel.Channel channel = pusher.subscribe("messages");
+        com.pusher.client.channel.Channel channel = pusher.subscribe(channelName);
 
         channel.bind("new_message", new SubscriptionEventListener() {
             @Override
@@ -75,8 +79,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 public void run() {
                     Gson gson = new Gson();
                     Message message = gson.fromJson(data, Message.class);
-                    Log.e("Hey", "Message Below");
-                    Log.e("Some", String.valueOf(message));
                     messageAdapter.add(message);
 
                     //have the ListView scroll down to the new message
@@ -139,18 +141,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         RequestParams params = new RequestParams();
 
         //set our JSON object
-        params.put("message", text);
+        params.put("text", text);
         params.put("name", twitterName);
         params.put("time", new Date().getTime());
+        params.put("channel", channelName);
 
         //Create Async Client
-        com.loopj.android.http.AsyncHttpClient client;
-        client = new com.loopj.android.http.AsyncHttpClient();
+        AsyncHttpClient client;
+        client = new AsyncHttpClient();
 
-        server = "http://localhost:3000";
+        server = "http://radiant-basin-1062.herokuapp.com/";
 
-        Log.e("Server", server);
-        client.post("http://localhost:3000/", params, new JsonHttpResponseHandler() {
+
+        client.post(server, params, new JsonHttpResponseHandler() {
+
+            @Override
+            public void onStart(){
+                Toast.makeText(getApplicationContext(), "Sending", Toast.LENGTH_LONG).show();
+            }
+
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                 runOnUiThread(new Runnable() {
@@ -176,37 +185,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
 
-        client.post("http://localhost:3000/hey", new JsonHttpResponseHandler(){
 
-
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, final JSONObject response) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.e("Hey Route", String.valueOf(response));
-                        messageInput.setText("");
-                        Toast.makeText(
-                                getApplicationContext(),
-                                "Something went right :)",
-                                Toast.LENGTH_LONG
-                        ).show();
-                    }
-                });
-            }
-
-
-            @Override
-            public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
-                Toast.makeText(
-                        getApplicationContext(),
-                        "Something went wrong :(",
-                        Toast.LENGTH_LONG
-                ).show();
-            }
-
-
-        });
         Log.e("End of method", "end");
 
     }
